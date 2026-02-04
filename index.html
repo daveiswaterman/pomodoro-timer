@@ -6,8 +6,7 @@
   <title>Pomodoro</title>
 
   <style>
-    :root{
-      --bg-image: url("https://media.istockphoto.com/id/2208884525/de/foto/blattoberfläche-mit-wassertropfen-makro-flach-dofleaf-oberfläche-mit-wassertropfen-makro.webp");
+    :root{--bg-image: url("./bg.webp");
       --bg-overlay: rgba(0,0,0,.55);
 
       --text:#fff;
@@ -24,7 +23,7 @@
     body{
       background:
         linear-gradient(0deg,var(--bg-overlay),var(--bg-overlay)),
-        var(--bg-image) center/cover no-repeat fixed;
+        var(--bg-image) center/cover no-repeat;
       color:var(--text);
       display:grid;
       place-items:center;
