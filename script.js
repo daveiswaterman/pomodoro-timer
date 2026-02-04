@@ -1,7 +1,15 @@
 // ===============================
-// CONFIG
+// CONFIG (Pomodoro ist veränderbar)
 // ===============================
-const DURATIONS = { pomodoro: 25, short: 5, long: 10 };
+const DURATIONS = {
+  pomodoro: 25,  // wird via Settings geändert
+  short: 5,
+  long: 10
+};
+
+// Lade gespeicherte Pomodoro-Minuten (wenn vorhanden)
+const savedPomodoro = Number(localStorage.getItem("pomodoroMinutes"));
+if ([25, 45, 65].includes(savedPomodoro)) DURATIONS.pomodoro = savedPomodoro;
 
 // ===============================
 // STATE (zeitbasiert)
@@ -28,10 +36,20 @@ const btnPomodoro = document.getElementById("modePomodoro");
 const btnShort = document.getElementById("modeShort");
 const btnLong = document.getElementById("modeLong");
 
+// Settings UI
+const settingsBtn = document.getElementById("settingsBtn");
+const settingsBackdrop = document.getElementById("settingsBackdrop");
+const closeSettingsBtn = document.getElementById("closeSettingsBtn");
+
+const preset25 = document.getElementById("preset25");
+const preset45 = document.getElementById("preset45");
+const preset65 = document.getElementById("preset65");
+const presetButtons = [preset25, preset45, preset65];
+
 // ===============================
 // SOUND (iPhone unlock)
 // ===============================
-const bellSound = new Audio("./sounds/bells_alarm.mp3"); // ✅ funktionierende Datei
+const bellSound = new Audio("./sounds/bells_alarm.mp3");
 bellSound.preload = "auto";
 bellSound.playsInline = true;
 
@@ -46,9 +64,7 @@ async function unlockAudioOnce() {
     bellSound.currentTime = 0;
     bellSound.muted = false;
     audioUnlocked = true;
-  } catch (_) {
-    // iOS kann hier blocken (z.B. In-App Browser / Lautlos)
-  }
+  } catch (_) {}
 }
 
 function startAlarmLoop() {
@@ -58,10 +74,7 @@ function startAlarmLoop() {
   bellSound.loop = true;
   bellSound.muted = false;
   bellSound.volume = 1.0;
-
-  bellSound.play().catch(() => {
-    // Wenn iOS blockt, kann Audio nicht starten
-  });
+  bellSound.play().catch(() => {});
 }
 
 function stopAlarm() {
@@ -103,11 +116,15 @@ function formatTimeFromMs(ms) {
 function render() {
   timeDisplay.textContent = formatTimeFromMs(remainingMs);
 
-  if (alarmActive) {
-    startBtn.textContent = "stop"; // ✅ Stop erscheint nur im Alarm
-  } else {
-    startBtn.textContent = running ? "pause" : "start";
-  }
+  if (alarmActive) startBtn.textContent = "stop";
+  else startBtn.textContent = running ? "pause" : "start";
+
+  // Preset-UI aktualisieren
+  presetButtons.forEach((b) => b.classList.remove("active"));
+  const current = DURATIONS.pomodoro;
+  if (current === 25) preset25.classList.add("active");
+  if (current === 45) preset45.classList.add("active");
+  if (current === 65) preset65.classList.add("active");
 }
 
 function stopTick() {
@@ -117,9 +134,7 @@ function stopTick() {
 
 function computeRemaining() {
   if (!running || endAtMs === null) return;
-
   remainingMs = endAtMs - Date.now();
-
   if (remainingMs <= 0) {
     remainingMs = 0;
     finish();
@@ -127,7 +142,7 @@ function computeRemaining() {
 }
 
 // ===============================
-// CORE TIMER
+// TIMER CORE
 // ===============================
 function startTick() {
   stopTick();
@@ -152,16 +167,13 @@ async function startTimer() {
 
 function pauseTimer() {
   if (!running) return;
-
   computeRemaining();
   running = false;
   endAtMs = null;
-
   stopTick();
   render();
 }
 
-// Wenn Zeit abläuft: Alarm starten (loop), Timer steht auf 0
 function finish() {
   stopTick();
   running = false;
@@ -169,25 +181,19 @@ function finish() {
 
   notifyDone();
 
-  // iPhone: Ton nur zuverlässig, wenn Seite sichtbar ist
+  // Ton nur wenn sichtbar (iPhone Web kann kein Audio im Hintergrund)
   if (document.visibilityState === "visible") {
     startAlarmLoop();
   } else {
-    // Wenn im Hintergrund: kein Audio möglich. Beim Zurückkommen starten wir ihn.
-    alarmActive = true; // merkt sich: Alarm ist „fällig“
+    alarmActive = true; // "fällig", wird beim Zurückkommen gestartet
   }
 
   render();
 }
 
-// ===============================
-// STOP (nur im Alarm-Modus)
-// ===============================
 function stopFromAlarmAndReset() {
   stopAlarm();
-
-  // ✅ Reset auf Ursprung des aktuellen Modus
-  remainingMs = DURATIONS[mode] * 60 * 1000;
+  remainingMs = DURATIONS[mode] * 60 * 1000; // zurücksetzen auf Modus-Ursprung
   render();
 }
 
@@ -195,18 +201,18 @@ function stopFromAlarmAndReset() {
 // UI ACTIONS
 // ===============================
 function toggleStartPauseOrStop() {
-  // 1) Wenn Alarm läuft/fällig ist -> STOP beendet Alarm + Reset
+  unlockAudioOnce();
+
+  // Wenn Alarm aktiv -> stoppt Alarm + reset
   if (alarmActive) {
     stopFromAlarmAndReset();
     return;
   }
 
-  // 2) Normalbetrieb: Start/Pause
   running ? pauseTimer() : startTimer();
 }
 
 function resetCurrent() {
-  // Reset stoppt immer alles inkl. Alarm
   stopAlarm();
   pauseTimer();
   remainingMs = DURATIONS[mode] * 60 * 1000;
@@ -214,7 +220,6 @@ function resetCurrent() {
 }
 
 function setMode(newMode) {
-  // Moduswechsel stoppt alles inkl. Alarm
   stopAlarm();
   pauseTimer();
 
@@ -229,10 +234,53 @@ function setMode(newMode) {
   render();
 }
 
-// Wenn du zurückkommst und Alarm war fällig -> starte Alarm loop jetzt
+// ===============================
+// SETTINGS
+// ===============================
+function openSettings() {
+  settingsBackdrop.classList.add("open");
+  settingsBackdrop.setAttribute("aria-hidden", "false");
+  render();
+}
+
+function closeSettings() {
+  settingsBackdrop.classList.remove("open");
+  settingsBackdrop.setAttribute("aria-hidden", "true");
+}
+
+function setPomodoroMinutes(min) {
+  DURATIONS.pomodoro = min;
+  localStorage.setItem("pomodoroMinutes", String(min));
+
+  // Wenn wir gerade im Pomodoro-Modus sind und NICHT laufen & kein Alarm:
+  // sofort auf neue Dauer setzen.
+  if (mode === "pomodoro" && !running && !alarmActive) {
+    remainingMs = DURATIONS.pomodoro * 60 * 1000;
+  }
+
+  render();
+}
+
+presetButtons.forEach((btn) => {
+  btn.addEventListener("click", () => {
+    const min = Number(btn.dataset.min);
+    if ([25, 45, 65].includes(min)) setPomodoroMinutes(min);
+  });
+});
+
+// Klick auf Backdrop schließt (nur außerhalb der Box)
+settingsBackdrop.addEventListener("click", (e) => {
+  if (e.target === settingsBackdrop) closeSettings();
+});
+
+// Escape schließt (Desktop)
+document.addEventListener("keydown", (e) => {
+  if (e.key === "Escape") closeSettings();
+});
+
+// Wenn du zurückkommst und Alarm war fällig -> starte Alarmloop
 document.addEventListener("visibilitychange", () => {
   if (document.visibilityState === "visible" && alarmActive) {
-    // Alarm war fällig, iOS hat im Hintergrund geblockt:
     startAlarmLoop();
     render();
   }
@@ -247,6 +295,9 @@ resetBtn.addEventListener("click", resetCurrent);
 btnPomodoro.addEventListener("click", () => setMode("pomodoro"));
 btnShort.addEventListener("click", () => setMode("short"));
 btnLong.addEventListener("click", () => setMode("long"));
+
+settingsBtn.addEventListener("click", openSettings);
+closeSettingsBtn.addEventListener("click", closeSettings);
 
 // INIT
 render();
