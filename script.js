@@ -2,14 +2,18 @@
 // CONFIG (Pomodoro ist veränderbar)
 // ===============================
 const DURATIONS = {
-  pomodoro: 25,  // wird via Settings geändert
+  pomodoro: 25, // via Settings 25/45/60
   short: 5,
   long: 10
 };
 
-// Lade gespeicherte Pomodoro-Minuten (wenn vorhanden)
+const POMODORO_PRESETS = [25, 45, 60];
+
+// Laden (wenn gespeichert)
 const savedPomodoro = Number(localStorage.getItem("pomodoroMinutes"));
-if ([25, 45, 65].includes(savedPomodoro)) DURATIONS.pomodoro = savedPomodoro;
+if (POMODORO_PRESETS.includes(savedPomodoro)) {
+  DURATIONS.pomodoro = savedPomodoro;
+}
 
 // ===============================
 // STATE (zeitbasiert)
@@ -43,8 +47,8 @@ const closeSettingsBtn = document.getElementById("closeSettingsBtn");
 
 const preset25 = document.getElementById("preset25");
 const preset45 = document.getElementById("preset45");
-const preset65 = document.getElementById("preset65");
-const presetButtons = [preset25, preset45, preset65];
+const preset60 = document.getElementById("preset60");
+const presetButtons = [preset25, preset45, preset60];
 
 // ===============================
 // SOUND (iPhone unlock)
@@ -119,12 +123,17 @@ function render() {
   if (alarmActive) startBtn.textContent = "stop";
   else startBtn.textContent = running ? "pause" : "start";
 
-  // Preset-UI aktualisieren
+  // Mode active state
+  [btnPomodoro, btnShort, btnLong].forEach((b) => b.classList.remove("active"));
+  if (mode === "pomodoro") btnPomodoro.classList.add("active");
+  if (mode === "short") btnShort.classList.add("active");
+  if (mode === "long") btnLong.classList.add("active");
+
+  // Preset active state
   presetButtons.forEach((b) => b.classList.remove("active"));
-  const current = DURATIONS.pomodoro;
-  if (current === 25) preset25.classList.add("active");
-  if (current === 45) preset45.classList.add("active");
-  if (current === 65) preset65.classList.add("active");
+  if (DURATIONS.pomodoro === 25) preset25.classList.add("active");
+  if (DURATIONS.pomodoro === 45) preset45.classList.add("active");
+  if (DURATIONS.pomodoro === 60) preset60.classList.add("active");
 }
 
 function stopTick() {
@@ -181,11 +190,11 @@ function finish() {
 
   notifyDone();
 
-  // Ton nur wenn sichtbar (iPhone Web kann kein Audio im Hintergrund)
+  // iPhone: Audio nur zuverlässig wenn sichtbar
   if (document.visibilityState === "visible") {
     startAlarmLoop();
   } else {
-    alarmActive = true; // "fällig", wird beim Zurückkommen gestartet
+    alarmActive = true; // fällig, startet beim Zurückkommen
   }
 
   render();
@@ -193,7 +202,7 @@ function finish() {
 
 function stopFromAlarmAndReset() {
   stopAlarm();
-  remainingMs = DURATIONS[mode] * 60 * 1000; // zurücksetzen auf Modus-Ursprung
+  remainingMs = DURATIONS[mode] * 60 * 1000;
   render();
 }
 
@@ -203,7 +212,6 @@ function stopFromAlarmAndReset() {
 function toggleStartPauseOrStop() {
   unlockAudioOnce();
 
-  // Wenn Alarm aktiv -> stoppt Alarm + reset
   if (alarmActive) {
     stopFromAlarmAndReset();
     return;
@@ -226,11 +234,6 @@ function setMode(newMode) {
   mode = newMode;
   remainingMs = DURATIONS[mode] * 60 * 1000;
 
-  [btnPomodoro, btnShort, btnLong].forEach((b) => b.classList.remove("active"));
-  if (mode === "pomodoro") btnPomodoro.classList.add("active");
-  if (mode === "short") btnShort.classList.add("active");
-  if (mode === "long") btnLong.classList.add("active");
-
   render();
 }
 
@@ -249,11 +252,12 @@ function closeSettings() {
 }
 
 function setPomodoroMinutes(min) {
+  if (!POMODORO_PRESETS.includes(min)) return;
+
   DURATIONS.pomodoro = min;
   localStorage.setItem("pomodoroMinutes", String(min));
 
-  // Wenn wir gerade im Pomodoro-Modus sind und NICHT laufen & kein Alarm:
-  // sofort auf neue Dauer setzen.
+  // Wenn gerade Pomodoro und NICHT läuft & kein Alarm -> sofort setzen
   if (mode === "pomodoro" && !running && !alarmActive) {
     remainingMs = DURATIONS.pomodoro * 60 * 1000;
   }
@@ -264,16 +268,14 @@ function setPomodoroMinutes(min) {
 presetButtons.forEach((btn) => {
   btn.addEventListener("click", () => {
     const min = Number(btn.dataset.min);
-    if ([25, 45, 65].includes(min)) setPomodoroMinutes(min);
+    setPomodoroMinutes(min);
   });
 });
 
-// Klick auf Backdrop schließt (nur außerhalb der Box)
 settingsBackdrop.addEventListener("click", (e) => {
   if (e.target === settingsBackdrop) closeSettings();
 });
 
-// Escape schließt (Desktop)
 document.addEventListener("keydown", (e) => {
   if (e.key === "Escape") closeSettings();
 });
