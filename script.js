@@ -9,11 +9,13 @@ const DURATIONS = { pomodoro: 25, short: 5, long: 10 };
 let mode = "pomodoro";
 let running = false;
 
-let endAtMs = null; // Zeitpunkt, wann 0 erreicht wird
+let endAtMs = null;
 let remainingMs = DURATIONS[mode] * 60 * 1000;
 
 let tickId = null;
-let alarmFired = false;
+
+// Alarm-Modus
+let alarmActive = false;
 
 // ===============================
 // DOM
@@ -27,9 +29,9 @@ const btnShort = document.getElementById("modeShort");
 const btnLong = document.getElementById("modeLong");
 
 // ===============================
-// SOUND (iPhone-safe unlock)
+// SOUND (iPhone unlock)
 // ===============================
-const bellSound = new Audio("./sounds/bells_alarm.mp3"); // ✅ richtige Datei
+const bellSound = new Audio("./sounds/bells_alarm.mp3"); // ✅ funktionierende Datei
 bellSound.preload = "auto";
 bellSound.playsInline = true;
 
@@ -37,37 +39,45 @@ let audioUnlocked = false;
 
 async function unlockAudioOnce() {
   if (audioUnlocked) return;
-
   try {
-    // iOS: Audio muss durch User-Interaktion "freigeschaltet" werden
     bellSound.muted = true;
     await bellSound.play();
     bellSound.pause();
     bellSound.currentTime = 0;
     bellSound.muted = false;
     audioUnlocked = true;
-  } catch (e) {
-    // Wenn das fehlschlägt, ist oft Silent-Mode aktiv oder iOS blockt im In-App Browser
-    // (In Safari klappt es nach einem Klick normalerweise.)
+  } catch (_) {
+    // iOS kann hier blocken (z.B. In-App Browser / Lautlos)
   }
 }
 
-function playBell() {
-  // Extra robust
+function startAlarmLoop() {
+  alarmActive = true;
+  bellSound.pause();
+  bellSound.currentTime = 0;
+  bellSound.loop = true;
   bellSound.muted = false;
   bellSound.volume = 1.0;
+
+  bellSound.play().catch(() => {
+    // Wenn iOS blockt, kann Audio nicht starten
+  });
+}
+
+function stopAlarm() {
+  alarmActive = false;
+  bellSound.loop = false;
+  bellSound.pause();
   bellSound.currentTime = 0;
-  bellSound.play().catch(() => {});
 }
 
 // ===============================
-// NOTIFICATIONS
+// NOTIFICATIONS (optional)
 // ===============================
 async function ensureNotificationPermission() {
   if (!("Notification" in window)) return false;
   if (Notification.permission === "granted") return true;
   if (Notification.permission === "denied") return false;
-
   const p = await Notification.requestPermission();
   return p === "granted";
 }
@@ -75,7 +85,6 @@ async function ensureNotificationPermission() {
 function notifyDone() {
   if (!("Notification" in window)) return;
   if (Notification.permission !== "granted") return;
-
   const title = "⏰ Zeit vorbei";
   const body = mode === "pomodoro" ? "Pomodoro fertig." : "Pause fertig.";
   new Notification(title, { body });
@@ -93,7 +102,12 @@ function formatTimeFromMs(ms) {
 
 function render() {
   timeDisplay.textContent = formatTimeFromMs(remainingMs);
-  startBtn.textContent = running ? "pause" : "start";
+
+  if (alarmActive) {
+    startBtn.textContent = "stop"; // ✅ Stop erscheint nur im Alarm
+  } else {
+    startBtn.textContent = running ? "pause" : "start";
+  }
 }
 
 function stopTick() {
@@ -113,7 +127,7 @@ function computeRemaining() {
 }
 
 // ===============================
-// CORE
+// CORE TIMER
 // ===============================
 function startTick() {
   stopTick();
@@ -124,16 +138,14 @@ function startTick() {
 }
 
 async function startTimer() {
-  // iPhone: Unlock beim Start-Klick anstoßen
   await unlockAudioOnce();
   await ensureNotificationPermission();
 
-  if (running) return;
+  if (running || alarmActive) return;
 
   running = true;
-  alarmFired = false;
-
   endAtMs = Date.now() + remainingMs;
+
   startTick();
   render();
 }
@@ -141,32 +153,73 @@ async function startTimer() {
 function pauseTimer() {
   if (!running) return;
 
-  computeRemaining(); // remainingMs aktualisieren
+  computeRemaining();
   running = false;
   endAtMs = null;
+
   stopTick();
   render();
 }
 
-function toggleStartPause() {
-  // iPhone: Unlock auch hier versuchen (falls startTimer nicht awaited wird)
-  unlockAudioOnce();
+// Wenn Zeit abläuft: Alarm starten (loop), Timer steht auf 0
+function finish() {
+  stopTick();
+  running = false;
+  endAtMs = null;
+
+  notifyDone();
+
+  // iPhone: Ton nur zuverlässig, wenn Seite sichtbar ist
+  if (document.visibilityState === "visible") {
+    startAlarmLoop();
+  } else {
+    // Wenn im Hintergrund: kein Audio möglich. Beim Zurückkommen starten wir ihn.
+    alarmActive = true; // merkt sich: Alarm ist „fällig“
+  }
+
+  render();
+}
+
+// ===============================
+// STOP (nur im Alarm-Modus)
+// ===============================
+function stopFromAlarmAndReset() {
+  stopAlarm();
+
+  // ✅ Reset auf Ursprung des aktuellen Modus
+  remainingMs = DURATIONS[mode] * 60 * 1000;
+  render();
+}
+
+// ===============================
+// UI ACTIONS
+// ===============================
+function toggleStartPauseOrStop() {
+  // 1) Wenn Alarm läuft/fällig ist -> STOP beendet Alarm + Reset
+  if (alarmActive) {
+    stopFromAlarmAndReset();
+    return;
+  }
+
+  // 2) Normalbetrieb: Start/Pause
   running ? pauseTimer() : startTimer();
 }
 
 function resetCurrent() {
+  // Reset stoppt immer alles inkl. Alarm
+  stopAlarm();
   pauseTimer();
   remainingMs = DURATIONS[mode] * 60 * 1000;
-  alarmFired = false;
   render();
 }
 
 function setMode(newMode) {
+  // Moduswechsel stoppt alles inkl. Alarm
+  stopAlarm();
   pauseTimer();
 
   mode = newMode;
   remainingMs = DURATIONS[mode] * 60 * 1000;
-  alarmFired = false;
 
   [btnPomodoro, btnShort, btnLong].forEach((b) => b.classList.remove("active"));
   if (mode === "pomodoro") btnPomodoro.classList.add("active");
@@ -176,51 +229,19 @@ function setMode(newMode) {
   render();
 }
 
-function finish() {
-  stopTick();
-  running = false;
-  endAtMs = null;
-
-  // 🔔/🔕 Alarm einmal auslösen
-  if (!alarmFired) {
-    alarmFired = true;
-
-    // Notification kann auch im Hintergrund kommen
-    notifyDone();
-
-    // iPhone Web: MP3 nur, wenn Seite sichtbar
-    if (document.visibilityState === "visible") {
-      playBell();
-    }
-  }
-
-  // ✅ Auto-Reset auf Ursprung des aktuellen Modus
-  remainingMs = DURATIONS[mode] * 60 * 1000;
-
-  render();
-}
-
-// Wenn du zurückkehrst: Zeit korrigieren und ggf. Bell nachholen
+// Wenn du zurückkommst und Alarm war fällig -> starte Alarm loop jetzt
 document.addEventListener("visibilitychange", () => {
-  if (document.visibilityState === "visible") {
-    computeRemaining();
+  if (document.visibilityState === "visible" && alarmActive) {
+    // Alarm war fällig, iOS hat im Hintergrund geblockt:
+    startAlarmLoop();
     render();
-
-    // Wenn im Hintergrund abgelaufen: beim Zurückkommen einmal klingeln
-    if (alarmFired) {
-      // nur wenn gerade frisch abgelaufen war (remaining bereits auf Ursprung gesetzt),
-      // deshalb prüfen wir: war es im Hintergrund abgelaufen? => endAtMs war null und alarmFired true
-      // Wir klingeln genau einmal beim Sichtbarwerden nach Ablauf.
-      playBell();
-      alarmFired = false; // verhindert mehrfaches Nachklingeln
-    }
   }
 });
 
 // ===============================
 // EVENTS
 // ===============================
-startBtn.addEventListener("click", toggleStartPause);
+startBtn.addEventListener("click", toggleStartPauseOrStop);
 resetBtn.addEventListener("click", resetCurrent);
 
 btnPomodoro.addEventListener("click", () => setMode("pomodoro"));
