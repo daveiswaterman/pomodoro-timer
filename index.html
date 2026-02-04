@@ -7,32 +7,31 @@
 
   <style>
     :root{
-      --bg-image: url("https://media.istockphoto.com/id/2208884525/de/foto/blattoberfläche-mit-wassertropfen-makro-flach-dofleaf-oberfläche-mit-wassertropfen-makro.webp?a=1&b=1&s=612x612&w=0&k=20&c=ukxEelGevN8mkwXwHS8D6OevFnquxz6ddJExfJ4T6BU=");
+      --bg-image: url("https://media.istockphoto.com/id/2208884525/de/foto/blattoberfläche-mit-wassertropfen-makro-flach-dofleaf-oberfläche-mit-wassertropfen-makro.webp");
       --bg-overlay: rgba(0,0,0,.55);
 
-      --text: #ffffff;
-      --btn-bg: #ffffff;
-      --btn-text: #111111;
-      --soft-stroke: rgba(255,255,255,.22);
+      --text:#fff;
+      --btn-bg:#fff;
+      --btn-text:#111;
     }
 
     html,body{
       height:100%;
       margin:0;
-      font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial;
+      font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial;
     }
 
     body{
       background:
-        linear-gradient(0deg, var(--bg-overlay), var(--bg-overlay)),
+        linear-gradient(0deg,var(--bg-overlay),var(--bg-overlay)),
         var(--bg-image) center/cover no-repeat fixed;
-      color: var(--text);
+      color:var(--text);
       display:grid;
       place-items:center;
     }
 
     .ui{
-      width:min(980px, 94vw);
+      width:min(980px,94vw);
       display:flex;
       flex-direction:column;
       align-items:center;
@@ -46,7 +45,6 @@
       justify-content:center;
     }
 
-    /* MODE BUTTONS */
     .pill{
       background:var(--btn-bg);
       color:var(--btn-text);
@@ -56,16 +54,13 @@
       font-size:22px;
       font-weight:800;
       cursor:pointer;
-      opacity:.75;
+      opacity:.6;
     }
+    .pill.active{opacity:1;}
 
-    .pill.active{ opacity:1; }
-
-    /* TIMER */
     .time{
-      font-size:clamp(120px, 18vw, 210px);
+      font-size:clamp(120px,18vw,210px);
       font-weight:900;
-      letter-spacing:2px;
       line-height:1;
       text-align:center;
     }
@@ -76,7 +71,6 @@
       align-items:center;
     }
 
-    /* START BUTTON */
     .start{
       background:var(--btn-bg);
       color:var(--btn-text);
@@ -88,7 +82,6 @@
       cursor:pointer;
     }
 
-    /* ICON BUTTONS */
     .icon{
       width:70px;
       height:70px;
@@ -99,12 +92,10 @@
       place-items:center;
       border:none;
       cursor:pointer;
-      user-select:none;
     }
+    .icon svg{width:34px;height:34px;}
 
-    .icon svg{ width:36px; height:36px; }
-
-    /* SETTINGS MODAL */
+    /* MODAL */
     .modalBackdrop{
       position:fixed;
       inset:0;
@@ -114,50 +105,37 @@
       justify-content:center;
       padding:18px;
     }
-
-    .modalBackdrop.open{ display:flex; }
+    .modalBackdrop.open{display:flex;}
 
     .modal{
-      width:min(520px, 94vw);
-      background:rgba(255,255,255,.92);
+      width:min(520px,94vw);
+      background:rgba(255,255,255,.94);
       color:#111;
       border-radius:24px;
-      box-shadow: 0 20px 60px rgba(0,0,0,.35);
-      overflow:hidden;
+      box-shadow:0 20px 60px rgba(0,0,0,.35);
     }
 
     .modalHeader{
       display:flex;
-      align-items:center;
       justify-content:space-between;
       padding:16px 18px;
-      border-bottom:1px solid rgba(0,0,0,.08);
       font-weight:900;
       font-size:18px;
+      border-bottom:1px solid rgba(0,0,0,.08);
     }
 
     .closeBtn{
       border:none;
       background:transparent;
-      cursor:pointer;
       font-size:22px;
-      line-height:1;
-      padding:6px 10px;
-      border-radius:12px;
+      cursor:pointer;
     }
-    .closeBtn:hover{ background:rgba(0,0,0,.06); }
 
     .modalBody{
       padding:18px;
       display:flex;
       flex-direction:column;
       gap:14px;
-    }
-
-    .label{
-      font-weight:800;
-      font-size:14px;
-      opacity:.9;
     }
 
     .presetRow{
@@ -169,79 +147,61 @@
     .preset{
       border:none;
       border-radius:999px;
-      padding:12px 16px;
+      padding:12px 18px;
       font-weight:900;
       cursor:pointer;
       background:#111;
       color:#fff;
-      opacity:.55;
+      opacity:.5;
     }
-    .preset.active{ opacity:1; }
-
-    .hint{
-      font-size:13px;
-      opacity:.8;
-      line-height:1.35;
-    }
+    .preset.active{opacity:1;}
   </style>
 </head>
 
 <body>
-  <div class="ui">
+<div class="ui">
 
-    <div class="modes">
-      <button id="modePomodoro" class="pill active">pomodoro</button>
-      <button id="modeShort" class="pill">short break</button>
-      <button id="modeLong" class="pill">long break</button>
-    </div>
-
-    <div id="timeDisplay" class="time">25:00</div>
-
-    <div class="controls">
-      <button id="startBtn" class="start">start</button>
-
-      <!-- RESET -->
-      <button id="resetBtn" class="icon" title="Reset">
-        <svg viewBox="0 0 24 24" aria-hidden="true">
-          <path fill="currentColor"
-            d="M12 6V3L8 7l4 4V8c2.76 0 5 2.24 5 5a5 5 0 1 1-8.66-3.54l-1.42-1.42A7 7 0 1 0 12 6z"/>
-        </svg>
-      </button>
-
-      <!-- SETTINGS -->
-      <button id="settingsBtn" class="icon" title="Einstellungen">
-        <svg viewBox="0 0 24 24" aria-hidden="true">
-          <path fill="currentColor"
-            d="M19.14,12.94a7.43,7.43,0,0,0,.05-.94,7.43,7.43,0,0,0-.05-.94l2.11-1.65a.5.5,0,0,0,.12-.63l-2-3.46a.5.5,0,0,0-.6-.22l-2.49,1a7.3,7.3,0,0,0-1.63-.94l-.38-2.65A.5.5,0,0,0,11.8,1H8.2a.5.5,0,0,0-.49.42L7.33,4.07a7.3,7.3,0,0,0-1.63.94l-2.49-1a.5.5,0,0,0-.6.22l-2,3.46a.5.5,0,0,0,.12.63L2.86,11.06a7.43,7.43,0,0,0-.05.94,7.43,7.43,0,0,0,.05.94L.75,14.59a.5.5,0,0,0-.12.63l2,3.46a.5.5,0,0,0,.6.22l2.49-1a7.3,7.3,0,0,0,1.63.94l.38,2.65A.5.5,0,0,0,8.2,23h3.6a.5.5,0,0,0,.49-.42l.38-2.65a7.3,7.3,0,0,0,1.63-.94l2.49,1a.5.5,0,0,0,.6-.22l2-3.46a.5.5,0,0,0-.12-.63ZM10,15.5A3.5,3.5,0,1,1,13.5,12,3.5,3.5,0,0,1,10,15.5Z"/>
-        </svg>
-      </button>
-    </div>
-
+  <div class="modes">
+    <button id="modePomodoro" class="pill active">pomodoro</button>
+    <button id="modeShort" class="pill">short break</button>
+    <button id="modeLong" class="pill">long break</button>
   </div>
 
-  <!-- SETTINGS MODAL -->
-  <div id="settingsBackdrop" class="modalBackdrop" aria-hidden="true">
-    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="settingsTitle">
-      <div class="modalHeader">
-        <div id="settingsTitle">Einstellungen</div>
-        <button id="closeSettingsBtn" class="closeBtn" aria-label="Schließen">✕</button>
-      </div>
+  <div id="timeDisplay" class="time">25:00</div>
 
-      <div class="modalBody">
-        <div class="label">Pomodoro-Zeit</div>
-        <div class="presetRow">
-          <button class="preset" id="preset25" data-min="25">25 min</button>
-          <button class="preset" id="preset45" data-min="45">45 min</button>
-          <button class="preset" id="preset60" data-min="60">60 min</button>
-        </div>
+  <div class="controls">
+    <button id="startBtn" class="start">start</button>
 
-        <div class="hint">
-          Hinweis: Wenn der Timer gerade läuft, wird die neue Pomodoro-Zeit beim nächsten Reset oder beim nächsten Start im Pomodoro-Modus übernommen.
-        </div>
+    <button id="resetBtn" class="icon" title="Reset">
+      <svg viewBox="0 0 24 24"><path fill="currentColor"
+        d="M12 6V3L8 7l4 4V8c2.76 0 5 2.24 5 5a5 5 0 1 1-8.66-3.54l-1.42-1.42A7 7 0 1 0 12 6z"/></svg>
+    </button>
+
+    <button id="settingsBtn" class="icon" title="Einstellungen">
+      <svg viewBox="0 0 24 24"><path fill="currentColor"
+        d="M12 8.5A3.5 3.5 0 1 0 12 15.5A3.5 3.5 0 1 0 12 8.5M19.14 12.94l2.11-1.65-2-3.46-2.49 1a7.1 7.1 0 0 0-1.63-.94L14.75 4h-5.5l-.38 2.65a7.1 7.1 0 0 0-1.63.94l-2.49-1-2 3.46 2.11 1.65a7.5 7.5 0 0 0 0 1.88L2.75 15.23l2 3.46 2.49-1a7.1 7.1 0 0 0 1.63.94L9.25 22h5.5l.38-2.65a7.1 7.1 0 0 0 1.63-.94l2.49 1 2-3.46-2.11-1.65a7.5 7.5 0 0 0 0-1.88z"/></svg>
+    </button>
+  </div>
+
+</div>
+
+<div id="settingsBackdrop" class="modalBackdrop">
+  <div class="modal">
+    <div class="modalHeader">
+      <div>Einstellungen</div>
+      <button id="closeSettingsBtn" class="closeBtn">✕</button>
+    </div>
+    <div class="modalBody">
+      <strong>Pomodoro-Zeit</strong>
+      <div class="presetRow">
+        <button id="preset25" class="preset" data-min="25">25 min</button>
+        <button id="preset45" class="preset" data-min="45">45 min</button>
+        <button id="preset60" class="preset" data-min="60">60 min</button>
       </div>
     </div>
   </div>
+</div>
 
-  <script src="./script.js" defer></script>
+<script src="./script.js" defer></script>
 </body>
 </html>
