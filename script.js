@@ -9,7 +9,7 @@ const DURATIONS = {
 
 // Lade gespeicherte Pomodoro-Minuten (wenn vorhanden)
 const savedPomodoro = Number(localStorage.getItem("pomodoroMinutes"));
-if ([25, 45, 65].includes(savedPomodoro)) DURATIONS.pomodoro = savedPomodoro;
+if ([25, 45, 60].includes(savedPomodoro)) DURATIONS.pomodoro = savedPomodoro;
 
 // ===============================
 // STATE (zeitbasiert)
@@ -124,7 +124,7 @@ function render() {
   const current = DURATIONS.pomodoro;
   if (current === 25) preset25.classList.add("active");
   if (current === 45) preset45.classList.add("active");
-  if (current === 65) preset65.classList.add("active");
+  if (current === 60) preset65.classList.add("active");
 }
 
 function stopTick() {
