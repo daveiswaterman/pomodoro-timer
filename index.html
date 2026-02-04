@@ -91,19 +91,18 @@
       place-items:center;
       border:none;
       cursor:pointer;
-  .icon svg{
+    }
+   .icon svg{
   width:34px;
   height:34px;
-}
-
-/* NUR das Loch minimal verschieben */
+     /* Korrektur: nur das Loch im Zahnrad minimal nach rechts */
 .gear-hole{
-  transform: translateX(0.5px);
+  transform: translateX(1px);
+}
 }
 
-/* falls du das ganze Zahnrad minimal justieren willst */
-#settingsBtn svg{
-  transform: translateX(0px);
+.icon#settingsBtn svg{
+  transform: translateX(-4px);
 }
 
     /* MODAL */
@@ -221,6 +220,7 @@
         <button id="preset45" class="preset" data-min="45">45 min</button>
         <button id="preset60" class="preset" data-min="60">60 min</button>
       </div>
+      <div class="hint">
     </div>
   </div>
 </div>
