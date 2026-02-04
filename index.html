@@ -92,7 +92,14 @@
       border:none;
       cursor:pointer;
     }
-    .icon svg{width:34px;height:34px;}
+   .icon svg{
+  width:34px;
+  height:34px;
+}
+
+.icon#settingsBtn svg{
+  transform: translateX(-2px);
+}
 
     /* MODAL */
     .modalBackdrop{
@@ -202,8 +209,6 @@
         <button id="preset60" class="preset" data-min="60">60 min</button>
       </div>
       <div class="hint">
-  Hinweis: Wenn der Timer gerade läuft, wird die neue Pomodoro-Zeit
-  beim nächsten Reset oder beim nächsten Start im Pomodoro-Modus übernommen.
     </div>
   </div>
 </div>
