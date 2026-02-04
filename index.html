@@ -8,7 +8,7 @@
   <style>
     :root{
       --bg-image: url("https://media.istockphoto.com/id/2208884525/de/foto/blattoberfläche-mit-wassertropfen-makro-flach-dofleaf-oberfläche-mit-wassertropfen-makro.webp?a=1&b=1&s=612x612&w=0&k=20&c=ukxEelGevN8mkwXwHS8D6OevFnquxz6ddJExfJ4T6BU=");
-      --bg-overlay: rgba(0,0,0,.65);
+      --bg-overlay: rgba(0,0,0,.55);
 
       --text: #ffffff;
       --btn-bg: #ffffff;
@@ -44,6 +44,7 @@
       gap:18px;
     }
 
+    /* MODE BUTTONS */
     .pill{
       background:var(--btn-bg);
       color:var(--btn-text);
@@ -56,8 +57,11 @@
       opacity:.75;
     }
 
-    .pill.active{ opacity:1; }
+    .pill.active{
+      opacity:1;
+    }
 
+    /* TIMER */
     .time{
       font-size:clamp(120px, 18vw, 210px);
       font-weight:900;
@@ -70,6 +74,7 @@
       align-items:center;
     }
 
+    /* START BUTTON */
     .start{
       background:var(--btn-bg);
       color:var(--btn-text);
@@ -81,23 +86,27 @@
       cursor:pointer;
     }
 
+    /* ICON BUTTON (RESET) */
     .icon{
       width:70px;
-  height:70px;
-  border-radius:999px;
+      height:70px;
+      border-radius:999px;
 
-  background: var(--btn-bg);      /* ✅ weiß */
-  color: var(--btn-text);         /* ✅ dunkles Icon */
+      background:var(--btn-bg);
+      color:var(--btn-text);
 
-  display:grid;
-  place-items:center;
+      display:grid;
+      place-items:center;
 
-  font-size:36px;                 /* ⬅️ Icon größer */
-  font-weight:900;
+      border:none;
+      cursor:pointer;
+      user-select:none;
+    }
 
-  border:none;
-  cursor:pointer;
-  user-select:none;
+    /* SVG ICON SIZE */
+    .icon svg{
+      width:36px;
+      height:36px;
     }
   </style>
 </head>
@@ -115,15 +124,19 @@
 
     <div class="controls">
       <button id="startBtn" class="start">start</button>
-      <div id="resetBtn" class="icon">
-  <svg viewBox="0 0 24 24" width="34" height="34">
-    <path fill="currentColor"
-      d="M12 6V3L8 7l4 4V8c2.76 0 5 2.24 5 5a5 5 0 1 1-8.66-3.54l-1.42-1.42A7 7 0 1 0 12 6z"/>
-  </svg>
-</div>
+
+      <!-- RESET BUTTON WITH SVG ICON -->
+      <div id="resetBtn" class="icon" title="Reset">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path fill="currentColor"
+            d="M12 6V3L8 7l4 4V8c2.76 0 5 2.24 5 5a5 5 0 1 1-8.66-3.54l-1.42-1.42A7 7 0 1 0 12 6z"/>
+        </svg>
+      </div>
+    </div>
 
   </div>
 
+  <!-- SCRIPT -->
   <script src="./script.js" defer></script>
 </body>
 </html>
