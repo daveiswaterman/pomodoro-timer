@@ -83,14 +83,21 @@
 
     .icon{
       width:70px;
-      height:70px;
-      border-radius:20px;
-      display:grid;
-      place-items:center;
-      background:rgba(0,0,0,.25);
-      border:1px solid var(--soft-stroke);
-      cursor:pointer;
-      user-select:none;
+  height:70px;
+  border-radius:999px;
+
+  background: var(--btn-bg);      /* ✅ weiß */
+  color: var(--btn-text);         /* ✅ dunkles Icon */
+
+  display:grid;
+  place-items:center;
+
+  font-size:28px;                 /* ⬅️ Icon größer */
+  font-weight:900;
+
+  border:none;
+  cursor:pointer;
+  user-select:none;
     }
   </style>
 </head>
