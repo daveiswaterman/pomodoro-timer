@@ -13,7 +13,6 @@
       --text: #ffffff;
       --btn-bg: #ffffff;
       --btn-text: #111111;
-      --soft-stroke: rgba(255,255,255,.22);
     }
 
     html,body{
@@ -46,7 +45,6 @@
       justify-content:center;
     }
 
-    /* MODE BUTTONS */
     .pill{
       background:var(--btn-bg);
       color:var(--btn-text);
@@ -56,12 +54,10 @@
       font-size:22px;
       font-weight:800;
       cursor:pointer;
-      opacity:.75;
+      opacity:.7;
     }
-
     .pill.active{ opacity:1; }
 
-    /* TIMER */
     .time{
       font-size:clamp(120px, 18vw, 210px);
       font-weight:900;
@@ -76,7 +72,6 @@
       align-items:center;
     }
 
-    /* START BUTTON */
     .start{
       background:var(--btn-bg);
       color:var(--btn-text);
@@ -88,7 +83,6 @@
       cursor:pointer;
     }
 
-    /* ICON BUTTONS */
     .icon{
       width:70px;
       height:70px;
@@ -100,9 +94,20 @@
       border:none;
       cursor:pointer;
       user-select:none;
+      transition: transform .06s ease;
     }
+    .icon:active{ transform: scale(.96); }
 
-    .icon svg{ width:36px; height:36px; }
+    /* SVG style – clean + consistent */
+    .icon svg{
+      width:32px;
+      height:32px;
+      stroke: currentColor;
+      fill: none;
+      stroke-width: 2.2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
 
     /* SETTINGS MODAL */
     .modalBackdrop{
@@ -114,7 +119,6 @@
       justify-content:center;
       padding:18px;
     }
-
     .modalBackdrop.open{ display:flex; }
 
     .modal{
@@ -203,16 +207,18 @@
       <!-- RESET -->
       <button id="resetBtn" class="icon" title="Reset">
         <svg viewBox="0 0 24 24" aria-hidden="true">
-          <path fill="currentColor"
-            d="M12 6V3L8 7l4 4V8c2.76 0 5 2.24 5 5a5 5 0 1 1-8.66-3.54l-1.42-1.42A7 7 0 1 0 12 6z"/>
+          <path d="M3 12a9 9 0 0 1 15.36-6.36"/>
+          <path d="M18 3v4h-4"/>
+          <path d="M21 12a9 9 0 0 1-15.36 6.36"/>
+          <path d="M6 21v-4h4"/>
         </svg>
       </button>
 
-      <!-- SETTINGS -->
+      <!-- SETTINGS (clean gear) -->
       <button id="settingsBtn" class="icon" title="Einstellungen">
         <svg viewBox="0 0 24 24" aria-hidden="true">
-          <path fill="currentColor"
-            d="M19.14,12.94a7.43,7.43,0,0,0,.05-.94,7.43,7.43,0,0,0-.05-.94l2.11-1.65a.5.5,0,0,0,.12-.63l-2-3.46a.5.5,0,0,0-.6-.22l-2.49,1a7.3,7.3,0,0,0-1.63-.94l-.38-2.65A.5.5,0,0,0,11.8,1H8.2a.5.5,0,0,0-.49.42L7.33,4.07a7.3,7.3,0,0,0-1.63.94l-2.49-1a.5.5,0,0,0-.6.22l-2,3.46a.5.5,0,0,0,.12.63L2.86,11.06a7.43,7.43,0,0,0-.05.94,7.43,7.43,0,0,0,.05.94L.75,14.59a.5.5,0,0,0-.12.63l2,3.46a.5.5,0,0,0,.6.22l2.49-1a7.3,7.3,0,0,0,1.63.94l.38,2.65A.5.5,0,0,0,8.2,23h3.6a.5.5,0,0,0,.49-.42l.38-2.65a7.3,7.3,0,0,0,1.63-.94l2.49,1a.5.5,0,0,0,.6-.22l2-3.46a.5.5,0,0,0-.12-.63ZM10,15.5A3.5,3.5,0,1,1,13.5,12,3.5,3.5,0,0,1,10,15.5Z"/>
+          <path d="M12 15.5a3.5 3.5 0 1 0 0-7a3.5 3.5 0 0 0 0 7z"/>
+          <path d="M19.4 15a7.9 7.9 0 0 0 .1-6l-2 .7a6 6 0 0 0-1.1-1.9l1-1.9a7.9 7.9 0 0 0-6-2.5l-.4 2.1a6.3 6.3 0 0 0-2.2.7L7.1 3.8a7.9 7.9 0 0 0-4.1 4.9l2 .8a6.3 6.3 0 0 0 0 2.3l-2 .8a7.9 7.9 0 0 0 4.1 4.9l1.7-1.5a6.3 6.3 0 0 0 2.2.7l.4 2.1a7.9 7.9 0 0 0 6-2.5l-1-1.9a6 6 0 0 0 1.1-1.9l2 .7z"/>
         </svg>
       </button>
     </div>
@@ -232,11 +238,11 @@
         <div class="presetRow">
           <button class="preset" id="preset25" data-min="25">25 min</button>
           <button class="preset" id="preset45" data-min="45">45 min</button>
-          <button class="preset" id="preset65" data-min="65">65 min</button>
+          <button class="preset" id="preset60" data-min="60">60 min</button>
         </div>
 
         <div class="hint">
-          Hinweis: Wenn der Timer gerade läuft, wird die neue Pomodoro-Zeit beim nächsten Reset oder beim nächsten Start im Pomodoro-Modus übernommen.
+          Wenn der Timer gerade läuft, wird die neue Pomodoro-Zeit beim nächsten Reset oder beim nächsten Start im Pomodoro-Modus übernommen.
         </div>
       </div>
     </div>
