@@ -19,7 +19,7 @@ const btnShort = document.getElementById("modeShort");
 const btnLong = document.getElementById("modeLong");
 
 // Sound (nur wenn Seite aktiv ist erlaubt)
-const bellSound = new Audio("./sounds/bell.mp3");
+const bellSound = new Audio("./sounds/bells_alarm.mp3");
 bellSound.preload = "auto";
 
 function playBell() {
