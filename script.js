@@ -1,119 +1,322 @@
-const DURATIONS = { pomodoro:25, short:5, long:10 };
+// ===============================
+// ✅ UI SCALE (damit alles als Block skaliert wie rechts)
+// ===============================
+(function applyUiScale(){
+  const DESIGN_W = 980;
+  const DESIGN_H = 620;
 
-const saved = Number(localStorage.getItem("pomodoroMinutes"));
-if ([25,45,60].includes(saved)) DURATIONS.pomodoro = saved;
+  function setScale(){
+    const vw = window.innerWidth;
+    const vh = window.innerHeight;
 
-let mode="pomodoro", running=false, alarmActive=false;
-let endAt=null, remaining=DURATIONS[mode]*60000, tick=null;
+    // etwas Rand lassen
+    const pad = 24;
+    const s = Math.min((vw - pad) / DESIGN_W, (vh - pad) / DESIGN_H, 1);
 
-const timeDisplay=document.getElementById("timeDisplay");
-const startBtn=document.getElementById("startBtn");
-const resetBtn=document.getElementById("resetBtn");
+    document.documentElement.style.setProperty("--ui-scale", String(Math.max(0.3, s)));
+  }
 
-const btnPomodoro=document.getElementById("modePomodoro");
-const btnShort=document.getElementById("modeShort");
-const btnLong=document.getElementById("modeLong");
+  window.addEventListener("resize", setScale, { passive: true });
+  window.addEventListener("orientationchange", setScale, { passive: true });
+  setScale();
+})();
 
-const settingsBtn=document.getElementById("settingsBtn");
-const settingsBackdrop=document.getElementById("settingsBackdrop");
-const closeSettingsBtn=document.getElementById("closeSettingsBtn");
 
-const preset25=document.getElementById("preset25");
-const preset45=document.getElementById("preset45");
-const preset60=document.getElementById("preset60");
-const presets=[preset25,preset45,preset60];
+// ===============================
+// CONFIG (Pomodoro ist veränderbar)
+// ===============================
+const DURATIONS = {
+  pomodoro: 25,  // wird via Settings geändert
+  short: 5,
+  long: 10
+};
 
-const bell=new Audio("./sounds/bells_alarm.mp3");
-bell.loop=true; bell.preload="auto"; bell.playsInline=true;
-let audioUnlocked=false;
+// Lade gespeicherte Pomodoro-Minuten (wenn vorhanden)
+const savedPomodoro = Number(localStorage.getItem("pomodoroMinutes"));
+if ([25, 45, 60].includes(savedPomodoro)) DURATIONS.pomodoro = savedPomodoro;
 
-function unlockAudio(){
-  if(audioUnlocked) return;
-  bell.muted=true;
-  bell.play().then(()=>{
-    bell.pause(); bell.currentTime=0; bell.muted=false; audioUnlocked=true;
-  }).catch(()=>{});
+// ===============================
+// STATE (zeitbasiert)
+// ===============================
+let mode = "pomodoro";
+let running = false;
+
+let endAtMs = null;
+let remainingMs = DURATIONS[mode] * 60 * 1000;
+
+let tickId = null;
+
+// Alarm-Modus
+let alarmActive = false;
+
+// ===============================
+// DOM
+// ===============================
+const timeDisplay = document.getElementById("timeDisplay");
+const startBtn = document.getElementById("startBtn");
+const resetBtn = document.getElementById("resetBtn");
+
+const btnPomodoro = document.getElementById("modePomodoro");
+const btnShort = document.getElementById("modeShort");
+const btnLong = document.getElementById("modeLong");
+
+// Settings UI
+const settingsBtn = document.getElementById("settingsBtn");
+const settingsBackdrop = document.getElementById("settingsBackdrop");
+const closeSettingsBtn = document.getElementById("closeSettingsBtn");
+
+const preset25 = document.getElementById("preset25");
+const preset45 = document.getElementById("preset45");
+const preset60 = document.getElementById("preset60");
+const presetButtons = [preset25, preset45, preset60];
+
+// ===============================
+// SOUND (iPhone unlock)
+// ===============================
+const bellSound = new Audio("./sounds/bells_alarm.mp3");
+bellSound.preload = "auto";
+bellSound.playsInline = true;
+
+let audioUnlocked = false;
+
+async function unlockAudioOnce() {
+  if (audioUnlocked) return;
+  try {
+    bellSound.muted = true;
+    await bellSound.play();
+    bellSound.pause();
+    bellSound.currentTime = 0;
+    bellSound.muted = false;
+    audioUnlocked = true;
+  } catch (_) {}
 }
 
-function format(ms){
-  const s=Math.max(0,Math.ceil(ms/1000));
-  return String(Math.floor(s/60)).padStart(2,"0")+":"+String(s%60).padStart(2,"0");
+function startAlarmLoop() {
+  alarmActive = true;
+  bellSound.pause();
+  bellSound.currentTime = 0;
+  bellSound.loop = true;
+  bellSound.muted = false;
+  bellSound.volume = 1.0;
+  bellSound.play().catch(() => {});
 }
 
-function render(){
-  timeDisplay.textContent=format(remaining);
-  startBtn.textContent=alarmActive?"stop":running?"pause":"start";
-  presets.forEach(p=>p.classList.remove("active"));
-  if(DURATIONS.pomodoro===25) preset25.classList.add("active");
-  if(DURATIONS.pomodoro===45) preset45.classList.add("active");
-  if(DURATIONS.pomodoro===60) preset60.classList.add("active");
+function stopAlarm() {
+  alarmActive = false;
+  bellSound.loop = false;
+  bellSound.pause();
+  bellSound.currentTime = 0;
 }
 
-function start(){
-  unlockAudio();
-  if(running||alarmActive) return;
-  running=true;
-  endAt=Date.now()+remaining;
-  tick=setInterval(()=>{
-    remaining=endAt-Date.now();
-    if(remaining<=0){remaining=0;finish();}
+// ===============================
+// NOTIFICATIONS (optional)
+// ===============================
+async function ensureNotificationPermission() {
+  if (!("Notification" in window)) return false;
+  if (Notification.permission === "granted") return true;
+  if (Notification.permission === "denied") return false;
+  const p = await Notification.requestPermission();
+  return p === "granted";
+}
+
+function notifyDone() {
+  if (!("Notification" in window)) return;
+  if (Notification.permission !== "granted") return;
+  const title = "⏰ Zeit vorbei";
+  const body = mode === "pomodoro" ? "Pomodoro fertig." : "Pause fertig.";
+  new Notification(title, { body });
+}
+
+// ===============================
+// HELPERS
+// ===============================
+function formatTimeFromMs(ms) {
+  const totalSec = Math.max(0, Math.ceil(ms / 1000));
+  const m = Math.floor(totalSec / 60);
+  const s = totalSec % 60;
+  return String(m).padStart(2, "0") + ":" + String(s).padStart(2, "0");
+}
+
+function render() {
+  timeDisplay.textContent = formatTimeFromMs(remainingMs);
+
+  if (alarmActive) startBtn.textContent = "stop";
+  else startBtn.textContent = running ? "pause" : "start";
+
+  // Preset-UI aktualisieren
+  presetButtons.forEach((b) => b.classList.remove("active"));
+  const current = DURATIONS.pomodoro;
+  if (current === 25) preset25.classList.add("active");
+  if (current === 45) preset45.classList.add("active");
+  if (current === 60) preset60.classList.add("active");
+}
+
+function stopTick() {
+  if (tickId) clearInterval(tickId);
+  tickId = null;
+}
+
+function computeRemaining() {
+  if (!running || endAtMs === null) return;
+  remainingMs = endAtMs - Date.now();
+  if (remainingMs <= 0) {
+    remainingMs = 0;
+    finish();
+  }
+}
+
+// ===============================
+// TIMER CORE
+// ===============================
+function startTick() {
+  stopTick();
+  tickId = setInterval(() => {
+    computeRemaining();
     render();
-  },250);
+  }, 250);
 }
 
-function pause(){
-  if(!running) return;
-  remaining=endAt-Date.now();
-  running=false; endAt=null;
-  clearInterval(tick); render();
-}
+async function startTimer() {
+  await unlockAudioOnce();
+  await ensureNotificationPermission();
 
-function finish(){
-  clearInterval(tick);
-  running=false; endAt=null; alarmActive=true;
-  if(document.visibilityState==="visible"){bell.currentTime=0;bell.play();}
+  if (running || alarmActive) return;
+
+  running = true;
+  endAtMs = Date.now() + remainingMs;
+
+  startTick();
   render();
 }
 
-function stopAlarm(){
-  alarmActive=false;
-  bell.pause(); bell.currentTime=0;
-  remaining=DURATIONS[mode]*60000;
+function pauseTimer() {
+  if (!running) return;
+  computeRemaining();
+  running = false;
+  endAtMs = null;
+  stopTick();
   render();
 }
 
-function setMode(m){
-  stopAlarm(); pause();
-  mode=m; remaining=DURATIONS[m]*60000;
-  [btnPomodoro,btnShort,btnLong].forEach(b=>b.classList.remove("active"));
-  if(m==="pomodoro") btnPomodoro.classList.add("active");
-  if(m==="short") btnShort.classList.add("active");
-  if(m==="long") btnLong.classList.add("active");
+function finish() {
+  stopTick();
+  running = false;
+  endAtMs = null;
+
+  notifyDone();
+
+  // Ton nur wenn sichtbar (iPhone Web kann kein Audio im Hintergrund)
+  if (document.visibilityState === "visible") {
+    startAlarmLoop();
+  } else {
+    alarmActive = true; // "fällig", wird beim Zurückkommen gestartet
+  }
+
   render();
 }
 
-startBtn.onclick=()=> alarmActive?stopAlarm():running?pause():start();
-resetBtn.onclick=()=>{stopAlarm();pause();remaining=DURATIONS[mode]*60000;render();};
-
-btnPomodoro.onclick=()=>setMode("pomodoro");
-btnShort.onclick=()=>setMode("short");
-btnLong.onclick=()=>setMode("long");
-
-settingsBtn.onclick=()=>settingsBackdrop.classList.add("open");
-closeSettingsBtn.onclick=()=>settingsBackdrop.classList.remove("open");
-
-presets.forEach(p=>p.onclick=()=>{
-  const min=Number(p.dataset.min);
-  DURATIONS.pomodoro=min;
-  localStorage.setItem("pomodoroMinutes",min);
-  if(mode==="pomodoro"&&!running&&!alarmActive) remaining=min*60000;
+function stopFromAlarmAndReset() {
+  stopAlarm();
+  remainingMs = DURATIONS[mode] * 60 * 1000; // zurücksetzen auf Modus-Ursprung
   render();
+}
+
+// ===============================
+// UI ACTIONS
+// ===============================
+function toggleStartPauseOrStop() {
+  unlockAudioOnce();
+
+  // Wenn Alarm aktiv -> stoppt Alarm + reset
+  if (alarmActive) {
+    stopFromAlarmAndReset();
+    return;
+  }
+
+  running ? pauseTimer() : startTimer();
+}
+
+function resetCurrent() {
+  stopAlarm();
+  pauseTimer();
+  remainingMs = DURATIONS[mode] * 60 * 1000;
+  render();
+}
+
+function setMode(newMode) {
+  stopAlarm();
+  pauseTimer();
+
+  mode = newMode;
+  remainingMs = DURATIONS[mode] * 60 * 1000;
+
+  [btnPomodoro, btnShort, btnLong].forEach((b) => b.classList.remove("active"));
+  if (mode === "pomodoro") btnPomodoro.classList.add("active");
+  if (mode === "short") btnShort.classList.add("active");
+  if (mode === "long") btnLong.classList.add("active");
+
+  render();
+}
+
+// ===============================
+// SETTINGS
+// ===============================
+function openSettings() {
+  settingsBackdrop.classList.add("open");
+  settingsBackdrop.setAttribute("aria-hidden", "false");
+  render();
+}
+
+function closeSettings() {
+  settingsBackdrop.classList.remove("open");
+  settingsBackdrop.setAttribute("aria-hidden", "true");
+}
+
+function setPomodoroMinutes(min) {
+  DURATIONS.pomodoro = min;
+  localStorage.setItem("pomodoroMinutes", String(min));
+
+  if (mode === "pomodoro" && !running && !alarmActive) {
+    remainingMs = DURATIONS.pomodoro * 60 * 1000;
+  }
+
+  render();
+}
+
+presetButtons.forEach((btn) => {
+  btn.addEventListener("click", () => {
+    const min = Number(btn.dataset.min);
+    if ([25, 45, 60].includes(min)) setPomodoroMinutes(min);
+  });
 });
 
-document.addEventListener("visibilitychange",()=>{
-  if(document.visibilityState==="visible"&&alarmActive){
-    bell.currentTime=0; bell.play();
+settingsBackdrop.addEventListener("click", (e) => {
+  if (e.target === settingsBackdrop) closeSettings();
+});
+
+document.addEventListener("keydown", (e) => {
+  if (e.key === "Escape") closeSettings();
+});
+
+document.addEventListener("visibilitychange", () => {
+  if (document.visibilityState === "visible" && alarmActive) {
+    startAlarmLoop();
+    render();
   }
 });
 
+// ===============================
+// EVENTS
+// ===============================
+startBtn.addEventListener("click", toggleStartPauseOrStop);
+resetBtn.addEventListener("click", resetCurrent);
+
+btnPomodoro.addEventListener("click", () => setMode("pomodoro"));
+btnShort.addEventListener("click", () => setMode("short"));
+btnLong.addEventListener("click", () => setMode("long"));
+
+settingsBtn.addEventListener("click", openSettings);
+closeSettingsBtn.addEventListener("click", closeSettings);
+
+// INIT
 render();
