@@ -1,26 +1,4 @@
-// ===============================
-// ✅ UI SCALE (damit alles als Block skaliert wie rechts)
-// ===============================
-(function applyUiScale(){
-  const DESIGN_W = 980;
-  const DESIGN_H = 620;
-
-  function setScale(){
-    const vw = window.innerWidth;
-    const vh = window.innerHeight;
-
-    // etwas Rand lassen
-    const pad = 24;
-    const s = Math.min((vw - pad) / DESIGN_W, (vh - pad) / DESIGN_H, 1);
-
-    document.documentElement.style.setProperty("--ui-scale", String(Math.max(0.3, s)));
-  }
-
-  window.addEventListener("resize", setScale, { passive: true });
-  window.addEventListener("orientationchange", setScale, { passive: true });
-  setScale();
-})();
-
+// script.js
 
 // ===============================
 // CONFIG (Pomodoro ist veränderbar)
@@ -276,6 +254,7 @@ function setPomodoroMinutes(min) {
   DURATIONS.pomodoro = min;
   localStorage.setItem("pomodoroMinutes", String(min));
 
+  // Wenn im Pomodoro-Modus und nicht laufen:
   if (mode === "pomodoro" && !running && !alarmActive) {
     remainingMs = DURATIONS.pomodoro * 60 * 1000;
   }
@@ -298,6 +277,7 @@ document.addEventListener("keydown", (e) => {
   if (e.key === "Escape") closeSettings();
 });
 
+// Wenn du zurückkommst und Alarm war fällig -> starte Alarmloop
 document.addEventListener("visibilitychange", () => {
   if (document.visibilityState === "visible" && alarmActive) {
     startAlarmLoop();
