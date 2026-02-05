@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Pomodoro</title>
+  <title>Pomodoro-Timer</title>
 
   <style>
     :root{
@@ -26,20 +26,34 @@
         linear-gradient(0deg,var(--bg-overlay),var(--bg-overlay)),
         var(--bg-image) center/cover no-repeat;
       color:var(--text);
+
       display:grid;
       place-items:center;
+
+      /* wichtig: etwas Rand + kein Scroll */
+      padding:20px;
+      overflow:hidden;
+      box-sizing:border-box;
     }
 
-    /* ===== SCALING (wie rechts) ===== */
+    /* ===== SCALING (funktioniert wirklich) =====
+       Wir haben eine fixe "Design-Basis" (980px breit).
+       Dann wird die gesamte UI mit transform skaliert,
+       sodass sie IMMER in Viewport-Breite UND -Höhe passt. */
     .ui{
-      width:980px; /* fixe Basisgröße */
+      width:980px; /* Basis-Layout */
       display:flex;
       flex-direction:column;
       align-items:center;
       gap:32px;
 
-      /* skaliert alles zusammen */
-      --scale: min(1, calc(100vmin / 900));
+      /* passt an Breite + Höhe an */
+      --scale: min(
+        1,
+        calc((100vw - 40px) / 980),
+        calc((100vh - 40px) / 650)
+      );
+
       transform: scale(var(--scale));
       transform-origin:center center;
     }
@@ -47,7 +61,7 @@
     .modes{
       display:flex;
       gap:18px;
-      flex-wrap:nowrap; /* kein Umbruch, bleibt wie rechts */
+      flex-wrap:nowrap;          /* bleibt in einer Reihe */
       justify-content:center;
     }
 
@@ -65,9 +79,8 @@
     }
     .pill.active{opacity:1;}
 
-    /* TIMER: fixe Basis, skaliert über .ui */
     .time{
-      font-size:210px;
+      font-size:210px;           /* Basisgröße – skaliert mit .ui */
       font-weight:900;
       line-height:1;
       text-align:center;
