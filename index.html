@@ -1,3 +1,4 @@
+<!-- index.html -->
 <!doctype html>
 <html lang="de">
 <head>
@@ -13,9 +14,6 @@
       --text:#fff;
       --btn-bg:#fff;
       --btn-text:#111;
-
-      /* wird von script.js gesetzt */
-      --ui-scale: 1;
     }
 
     html,body{
@@ -24,39 +22,49 @@
       font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial;
     }
 
+    /* ✅ geändert: flex + overflow hidden (damit nichts abgeschnitten wird) */
     body{
       background:
         linear-gradient(0deg,var(--bg-overlay),var(--bg-overlay)),
         var(--bg-image) center/cover no-repeat;
       color:var(--text);
-      display:grid;
-      place-items:center;
-      overflow:hidden;
-    }
-
-    /* ✅ SKALIER-CONTAINER (fixe Designgröße, skaliert als Block) */
-    .stage{
-      width:980px;              /* Design-Breite */
-      height:620px;             /* Design-Höhe (genug Luft für alles) */
       display:flex;
       align-items:center;
       justify-content:center;
-      transform: scale(var(--ui-scale));
-      transform-origin:center;
+      overflow:hidden;
+    }
+
+    /* ✅ NEU: Skalierungs-Wrapper */
+    .scale-wrap{
+      --base-width: 1000;     /* Design-Breite */
+      width:100vw;
+      height:100vh;
+      display:flex;
+      align-items:center;
+      justify-content:center;
     }
 
     .ui{
-      width:980px;              /* fix, damit nix umbrecht */
+      width:min(980px,94vw);
       display:flex;
       flex-direction:column;
       align-items:center;
       gap:32px;
+
+      /* ✅ NEU: komplette UI proportional skalieren */
+      transform-origin:center center;
+      transform: scale(
+        min(
+          calc(100vw / var(--base-width)),
+          calc(100vh / 700)
+        )
+      );
     }
 
     .modes{
       display:flex;
       gap:18px;
-      flex-wrap:nowrap;         /* wichtig: nicht umbrechen */
+      flex-wrap:wrap;
       justify-content:center;
     }
 
@@ -70,12 +78,11 @@
       font-weight:800;
       cursor:pointer;
       opacity:.6;
-      white-space:nowrap;
     }
     .pill.active{opacity:1;}
 
     .time{
-      font-size:210px;          /* fix statt clamp -> skaliert sauber */
+      font-size:clamp(120px,18vw,210px);
       font-weight:900;
       line-height:1;
       text-align:center;
@@ -110,7 +117,10 @@
       cursor:pointer;
     }
 
-    .icon svg{ width:34px; height:34px; }
+    .icon svg{
+      width:34px;
+      height:34px;
+    }
 
     /* SETTINGS BUTTON – feingetuned (wie bei dir) */
     #settingsBtn svg{
@@ -183,8 +193,9 @@
 </head>
 
 <body>
-  <!-- ✅ NEU: stage wrapper -->
-  <div class="stage" id="stage">
+  <!-- ✅ NEU: Wrapper -->
+  <div class="scale-wrap">
+
     <div class="ui">
 
       <div class="modes">
@@ -199,27 +210,29 @@
         <button id="startBtn" class="start">start</button>
 
         <button id="resetBtn" class="icon" title="Reset">
-          <svg viewBox="0 0 24 24"><path fill="currentColor"
-            d="M12 6V3L8 7l4 4V8c2.76 0 5 2.24 5 5a5 5 0 1 1-8.66-3.54l-1.42-1.42A7 7 0 1 0 12 6z"/></svg>
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path fill="currentColor"
+              d="M12 6V3L8 7l4 4V8c2.76 0 5 2.24 5 5a5 5 0 1 1-8.66-3.54l-1.42-1.42A7 7 0 1 0 12 6z"/>
+          </svg>
         </button>
 
         <button id="settingsBtn" class="icon" title="Einstellungen">
-          <svg viewBox="0 0 24 24" aria-hidden="true" class="gear-icon">
-            <path class="gear-outer" fill="currentColor"
-              d="M19.14 12.94l2.11-1.65-2-3.46-2.49 1a7.1 7.1 0 0 0-1.63-.94L14.75 4h-5.5l-.38 2.65a7.1 7.1 0 0 0-1.63.94l-2.49-1-2 3.46 2.11 1.65a7.5 7.5 0 0 0 0 1.88L2.75 15.23l2 3.46 2.49-1a7.1 7.1 0 0 0 1.63.94L9.25 22h5.5l.38-2.65a7.1 7.1 0 0 0 1.63-.94l2.49 1 2-3.46-2.11-1.65a7.5 7.5 0 0 0 0-1.88z"/>
-            <circle class="gear-hole" cx="12" cy="12" r="3.5" fill="white"/>
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path fill="currentColor"
+              d="M12 8.5A3.5 3.5 0 1 0 12 15.5A3.5 3.5 0 1 0 12 8.5M19.14 12.94l2.11-1.65-2-3.46-2.49 1a7.1 7.1 0 0 0-1.63-.94L14.75 4h-5.5l-.38 2.65a7.1 7.1 0 0 0-1.63.94l-2.49-1-2 3.46 2.11 1.65a7.5 7.5 0 0 0 0 1.88L2.75 15.23l2 3.46 2.49-1a7.1 7.1 0 0 0 1.63.94L9.25 22h5.5l.38-2.65a7.1 7.1 0 0 0 1.63-.94l2.49 1 2-3.46-2.11-1.65a7.5 7.5 0 0 0 0-1.88z"/>
           </svg>
         </button>
       </div>
 
     </div>
+
   </div>
 
-  <div id="settingsBackdrop" class="modalBackdrop">
-    <div class="modal">
+  <div id="settingsBackdrop" class="modalBackdrop" aria-hidden="true">
+    <div class="modal" role="dialog" aria-modal="true">
       <div class="modalHeader">
         <div>Einstellungen</div>
-        <button id="closeSettingsBtn" class="closeBtn">✕</button>
+        <button id="closeSettingsBtn" class="closeBtn" aria-label="Schließen">✕</button>
       </div>
       <div class="modalBody">
         <strong>Pomodoro-Zeit</strong>
