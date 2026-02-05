@@ -27,20 +27,26 @@
       color:var(--text);
       display:grid;
       place-items:center;
+      overflow:hidden; /* ✅ Skalierung: nichts scrollt/clippt */
     }
 
     .ui{
-      width:min(980px,94vw);
+      width:980px; /* ✅ Skalierung: feste Basis, wird dann skaliert */
       display:flex;
       flex-direction:column;
       align-items:center;
       gap:32px;
+
+      /* ✅ Skalierung der gesamten UI */
+      --scale: clamp(0.55, 100vmin / 900, 1);
+      transform: scale(var(--scale));
+      transform-origin: center center;
     }
 
     .modes{
       display:flex;
       gap:18px;
-      flex-wrap:wrap;
+      flex-wrap:nowrap; /* ✅ Skalierung: kein Umbruch */
       justify-content:center;
     }
 
@@ -92,17 +98,17 @@
       border:none;
       cursor:pointer;
     }
-   .icon svg{
-  width:34px;
-  height:34px;
-}
+    .icon svg{
+      width:34px;
+      height:34px;
+    }
 
-/* SETTINGS BUTTON – feingetuned */
-#settingsBtn svg{
-  width:30px;
-  height:30px;
-  transform: translateX(-1px);
-}
+    /* SETTINGS BUTTON – feingetuned */
+    #settingsBtn svg{
+      width:30px;
+      height:30px;
+      transform: translateX(-1px);
+    }
 
     /* MODAL */
     .modalBackdrop{
@@ -187,21 +193,21 @@
     </button>
 
     <button id="settingsBtn" class="icon" title="Einstellungen">
- <svg viewBox="0 0 24 24" aria-hidden="true" class="gear-icon">
-  <path
-    class="gear-outer"
-    fill="currentColor"
-    d="M19.14 12.94l2.11-1.65-2-3.46-2.49 1a7.1 7.1 0 0 0-1.63-.94L14.75 4h-5.5l-.38 2.65a7.1 7.1 0 0 0-1.63.94l-2.49-1-2 3.46 2.11 1.65a7.5 7.5 0 0 0 0 1.88L2.75 15.23l2 3.46 2.49-1a7.1 7.1 0 0 0 1.63.94L9.25 22h5.5l.38-2.65a7.1 7.1 0 0 0 1.63-.94l2.49 1 2-3.46-2.11-1.65a7.5 7.5 0 0 0 0-1.88z"
-  />
-  <circle
-    class="gear-hole"
-    cx="12"
-    cy="12"
-    r="3.5"
-    fill="white"
-  />
-</svg>
-</button>
+      <svg viewBox="0 0 24 24" aria-hidden="true" class="gear-icon">
+        <path
+          class="gear-outer"
+          fill="currentColor"
+          d="M19.14 12.94l2.11-1.65-2-3.46-2.49 1a7.1 7.1 0 0 0-1.63-.94L14.75 4h-5.5l-.38 2.65a7.1 7.1 0 0 0-1.63.94l-2.49-1-2 3.46 2.11 1.65a7.5 7.5 0 0 0 0 1.88L2.75 15.23l2 3.46 2.49-1a7.1 7.1 0 0 0 1.63.94L9.25 22h5.5l.38-2.65a7.1 7.1 0 0 0 1.63-.94l2.49 1 2-3.46-2.11-1.65a7.5 7.5 0 0 0 0-1.88z"
+        />
+        <circle
+          class="gear-hole"
+          cx="12"
+          cy="12"
+          r="3.5"
+          fill="white"
+        />
+      </svg>
+    </button>
   </div>
 
 </div>
