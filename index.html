@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Pomodoro-Timer</title>
+  <title>Pomodoro</title>
 
   <style>
     :root{
@@ -13,6 +13,9 @@
       --text:#fff;
       --btn-bg:#fff;
       --btn-text:#111;
+
+      /* wird von script.js gesetzt */
+      --ui-scale: 1;
     }
 
     html,body{
@@ -26,42 +29,34 @@
         linear-gradient(0deg,var(--bg-overlay),var(--bg-overlay)),
         var(--bg-image) center/cover no-repeat;
       color:var(--text);
-
       display:grid;
       place-items:center;
-
-      /* wichtig: etwas Rand + kein Scroll */
-      padding:20px;
       overflow:hidden;
-      box-sizing:border-box;
     }
 
-    /* ===== SCALING (funktioniert wirklich) =====
-       Wir haben eine fixe "Design-Basis" (980px breit).
-       Dann wird die gesamte UI mit transform skaliert,
-       sodass sie IMMER in Viewport-Breite UND -Höhe passt. */
+    /* ✅ SKALIER-CONTAINER (fixe Designgröße, skaliert als Block) */
+    .stage{
+      width:980px;              /* Design-Breite */
+      height:620px;             /* Design-Höhe (genug Luft für alles) */
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      transform: scale(var(--ui-scale));
+      transform-origin:center;
+    }
+
     .ui{
-      width:980px; /* Basis-Layout */
+      width:980px;              /* fix, damit nix umbrecht */
       display:flex;
       flex-direction:column;
       align-items:center;
       gap:32px;
-
-      /* passt an Breite + Höhe an */
-      --scale: min(
-        1,
-        calc((100vw - 40px) / 980),
-        calc((100vh - 40px) / 650)
-      );
-
-      transform: scale(var(--scale));
-      transform-origin:center center;
     }
 
     .modes{
       display:flex;
       gap:18px;
-      flex-wrap:nowrap;          /* bleibt in einer Reihe */
+      flex-wrap:nowrap;         /* wichtig: nicht umbrechen */
       justify-content:center;
     }
 
@@ -80,7 +75,7 @@
     .pill.active{opacity:1;}
 
     .time{
-      font-size:210px;           /* Basisgröße – skaliert mit .ui */
+      font-size:210px;          /* fix statt clamp -> skaliert sauber */
       font-weight:900;
       line-height:1;
       text-align:center;
@@ -101,7 +96,6 @@
       font-size:28px;
       font-weight:800;
       cursor:pointer;
-      white-space:nowrap;
     }
 
     .icon{
@@ -116,12 +110,9 @@
       cursor:pointer;
     }
 
-    .icon svg{
-      width:34px;
-      height:34px;
-    }
+    .icon svg{ width:34px; height:34px; }
 
-    /* SETTINGS BUTTON – feingetuned */
+    /* SETTINGS BUTTON – feingetuned (wie bei dir) */
     #settingsBtn svg{
       width:30px;
       height:30px;
@@ -192,62 +183,55 @@
 </head>
 
 <body>
-<div class="ui">
+  <!-- ✅ NEU: stage wrapper -->
+  <div class="stage" id="stage">
+    <div class="ui">
 
-  <div class="modes">
-    <button id="modePomodoro" class="pill active">pomodoro</button>
-    <button id="modeShort" class="pill">short break</button>
-    <button id="modeLong" class="pill">long break</button>
-  </div>
-
-  <div id="timeDisplay" class="time">25:00</div>
-
-  <div class="controls">
-    <button id="startBtn" class="start">start</button>
-
-    <button id="resetBtn" class="icon" title="Reset">
-      <svg viewBox="0 0 24 24"><path fill="currentColor"
-        d="M12 6V3L8 7l4 4V8c2.76 0 5 2.24 5 5a5 5 0 1 1-8.66-3.54l-1.42-1.42A7 7 0 1 0 12 6z"/></svg>
-    </button>
-
-    <button id="settingsBtn" class="icon" title="Einstellungen">
-      <svg viewBox="0 0 24 24" aria-hidden="true" class="gear-icon">
-        <path
-          class="gear-outer"
-          fill="currentColor"
-          d="M19.14 12.94l2.11-1.65-2-3.46-2.49 1a7.1 7.1 0 0 0-1.63-.94L14.75 4h-5.5l-.38 2.65a7.1 7.1 0 0 0-1.63.94l-2.49-1-2 3.46 2.11 1.65a7.5 7.5 0 0 0 0 1.88L2.75 15.23l2 3.46 2.49-1a7.1 7.1 0 0 0 1.63.94L9.25 22h5.5l.38-2.65a7.1 7.1 0 0 0 1.63-.94l2.49 1 2-3.46-2.11-1.65a7.5 7.5 0 0 0 0-1.88z"
-        />
-        <circle
-          class="gear-hole"
-          cx="12"
-          cy="12"
-          r="3.5"
-          fill="white"
-        />
-      </svg>
-    </button>
-  </div>
-
-</div>
-
-<div id="settingsBackdrop" class="modalBackdrop">
-  <div class="modal">
-    <div class="modalHeader">
-      <div>Einstellungen</div>
-      <button id="closeSettingsBtn" class="closeBtn">✕</button>
-    </div>
-    <div class="modalBody">
-      <strong>Pomodoro-Zeit</strong>
-      <div class="presetRow">
-        <button id="preset25" class="preset" data-min="25">25 min</button>
-        <button id="preset45" class="preset" data-min="45">45 min</button>
-        <button id="preset60" class="preset" data-min="60">60 min</button>
+      <div class="modes">
+        <button id="modePomodoro" class="pill active">pomodoro</button>
+        <button id="modeShort" class="pill">short break</button>
+        <button id="modeLong" class="pill">long break</button>
       </div>
-      <div class="hint"></div>
+
+      <div id="timeDisplay" class="time">25:00</div>
+
+      <div class="controls">
+        <button id="startBtn" class="start">start</button>
+
+        <button id="resetBtn" class="icon" title="Reset">
+          <svg viewBox="0 0 24 24"><path fill="currentColor"
+            d="M12 6V3L8 7l4 4V8c2.76 0 5 2.24 5 5a5 5 0 1 1-8.66-3.54l-1.42-1.42A7 7 0 1 0 12 6z"/></svg>
+        </button>
+
+        <button id="settingsBtn" class="icon" title="Einstellungen">
+          <svg viewBox="0 0 24 24" aria-hidden="true" class="gear-icon">
+            <path class="gear-outer" fill="currentColor"
+              d="M19.14 12.94l2.11-1.65-2-3.46-2.49 1a7.1 7.1 0 0 0-1.63-.94L14.75 4h-5.5l-.38 2.65a7.1 7.1 0 0 0-1.63.94l-2.49-1-2 3.46 2.11 1.65a7.5 7.5 0 0 0 0 1.88L2.75 15.23l2 3.46 2.49-1a7.1 7.1 0 0 0 1.63.94L9.25 22h5.5l.38-2.65a7.1 7.1 0 0 0 1.63-.94l2.49 1 2-3.46-2.11-1.65a7.5 7.5 0 0 0 0-1.88z"/>
+            <circle class="gear-hole" cx="12" cy="12" r="3.5" fill="white"/>
+          </svg>
+        </button>
+      </div>
+
     </div>
   </div>
-</div>
 
-<script src="./script.js" defer></script>
+  <div id="settingsBackdrop" class="modalBackdrop">
+    <div class="modal">
+      <div class="modalHeader">
+        <div>Einstellungen</div>
+        <button id="closeSettingsBtn" class="closeBtn">✕</button>
+      </div>
+      <div class="modalBody">
+        <strong>Pomodoro-Zeit</strong>
+        <div class="presetRow">
+          <button id="preset25" class="preset" data-min="25">25 min</button>
+          <button id="preset45" class="preset" data-min="45">45 min</button>
+          <button id="preset60" class="preset" data-min="60">60 min</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="./script.js" defer></script>
 </body>
 </html>
