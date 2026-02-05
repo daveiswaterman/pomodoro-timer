@@ -1,5 +1,3 @@
-// script.js
-
 // ===============================
 // CONFIG (Pomodoro ist veränderbar)
 // ===============================
@@ -254,7 +252,8 @@ function setPomodoroMinutes(min) {
   DURATIONS.pomodoro = min;
   localStorage.setItem("pomodoroMinutes", String(min));
 
-  // Wenn im Pomodoro-Modus und nicht laufen:
+  // Wenn wir gerade im Pomodoro-Modus sind und NICHT laufen & kein Alarm:
+  // sofort auf neue Dauer setzen.
   if (mode === "pomodoro" && !running && !alarmActive) {
     remainingMs = DURATIONS.pomodoro * 60 * 1000;
   }
@@ -269,10 +268,12 @@ presetButtons.forEach((btn) => {
   });
 });
 
+// Klick auf Backdrop schließt (nur außerhalb der Box)
 settingsBackdrop.addEventListener("click", (e) => {
   if (e.target === settingsBackdrop) closeSettings();
 });
 
+// Escape schließt (Desktop)
 document.addEventListener("keydown", (e) => {
   if (e.key === "Escape") closeSettings();
 });
